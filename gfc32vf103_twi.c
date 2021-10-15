@@ -3,6 +3,7 @@
 
 void TWIM_init(TWI_Master_t *twim, uint32_t i2c_interface, uint32_t speed)
 {
+	// todo: write init
 	//i2c_ackpos_config(twim->i2c_periph, I2C_ACKPOS_NEXT);
 }
 
