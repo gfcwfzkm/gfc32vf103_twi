@@ -1,3 +1,7 @@
+/**
+ * Example code, demonstrating the usage of my I2C library
+ * for the GD32V RISC-V microcontrollers.
+ **/
 
 #include "gd32vf103.h"
 #include "gfc32vf103_twi.h"
@@ -11,6 +15,17 @@
 
 /* I2C Driver Interface */
 TWI_Master_t twiInstance;
+
+/* The two interrupt calls going back to the library for processing */
+void I2C0_EV_IRQHandler(void)
+{
+	twim_masterIRQ(&twiInstance);
+}
+
+void I2C0_ER_IRQHandler(void)
+{
+	twim_errorIRQ(&twiInstance);
+}
 
 int main(void)
 {
