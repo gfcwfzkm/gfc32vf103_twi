@@ -1,6 +1,5 @@
 
 #include "gfc32vf103_twi.h"
-#include "gshell.h"
 
 #define TWIM_MODE_SENDING	0
 #define TWIM_MODE_RECEIVING	1
