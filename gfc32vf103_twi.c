@@ -1,5 +1,6 @@
 
 #include "gfc32vf103_twi.h"
+#include "gshell.h"
 
 #define TWIM_MODE_SENDING	0
 #define TWIM_MODE_RECEIVING	1
@@ -60,6 +61,84 @@ void twim_errorIRQ(TWI_Master_t *twiPtr)
 	twiPtr->status = TWIM_STATUS_READY;
 }
 
+/**
+ * The original i2c_clock_config function doesn't seem to support any clocks higher than 
+ * 400kHz (Fast-Mode) - This custom initialisation should allow pretty much any clock, and
+ * it also enables the FAST_MODE_PLUS register (which doesn't seem to make a difference whether
+ * it is set or not on my scope??)
+ * 
+ * So it is pretty much a 1:1 copy as from the library with some slight differences
+ */
+#define I2CCLK_MAX                    ((uint32_t)0x00000048U)             /*!< i2cclk maximum value */
+#define I2CCLK_MIN                    ((uint32_t)0x00000002U)             /*!< i2cclk minimum value */
+static void custom_i2c_clock_config(uint32_t i2c_periph, uint32_t clkspeed, uint32_t dutycyc)
+{
+	uint32_t pclk1, clkc, freq, risetime;
+    uint32_t temp;
+
+    pclk1 = rcu_clock_freq_get(CK_APB1);
+    /* I2C peripheral clock frequency */
+    freq = (uint32_t) (pclk1 / 1000000U);
+    if (freq >= I2CCLK_MAX) {
+        freq = I2CCLK_MAX;
+    }
+    temp = I2C_CTL1(i2c_periph);
+    temp &= ~I2C_CTL1_I2CCLK;
+    temp |= freq;
+
+    I2C_CTL1(i2c_periph) = temp;
+
+    if (100000U >= clkspeed) {
+        /* the maximum SCL rise time is 1000ns in standard mode */
+        risetime = (uint32_t) ((pclk1 / 1000000U) + 1U);
+        if (risetime >= I2CCLK_MAX) {
+            I2C_RT(i2c_periph) = I2CCLK_MAX;
+        } else if (risetime <= I2CCLK_MIN) {
+            I2C_RT(i2c_periph) = I2CCLK_MIN;
+        } else {
+            I2C_RT(i2c_periph) = risetime;
+        }
+        clkc = (uint32_t) (pclk1 / (clkspeed * 2U));
+        if (clkc < 0x04U) {
+            /* the CLKC in standard mode minmum value is 4 */
+            clkc = 0x04U;
+        }
+        I2C_CKCFG(i2c_periph) |= (I2C_CKCFG_CLKC & clkc);
+    } else {
+        /* the maximum SCL rise time is 300ns in fast mode */
+        I2C_RT(i2c_periph) = (uint32_t) (((freq * (uint32_t) 300U)
+                / (uint32_t) 1000U) + (uint32_t) 1U);
+        if (I2C_DTCY_2 == dutycyc) {
+            /* I2C duty cycle is 2 */
+            clkc = (uint32_t) (pclk1 / (clkspeed * 3U));
+            I2C_CKCFG(i2c_periph) &= ~I2C_CKCFG_DTCY;
+        } else {
+            /* I2C duty cycle is 16/9 */
+            clkc = (uint32_t) (pclk1 / (clkspeed * 25U));
+            I2C_CKCFG(i2c_periph) |= I2C_CKCFG_DTCY;
+        }
+        if (0U == (clkc & I2C_CKCFG_CLKC)) {
+            /* the CLKC in fast mode minmum value is 1 */
+            clkc |= 0x0001U;
+        }
+        I2C_CKCFG(i2c_periph) |= I2C_CKCFG_FAST;
+        I2C_CKCFG(i2c_periph) |= clkc;
+
+		/* Not sure how I feel about this, considering that
+		 * the register isn't even nicely defined like the
+		 * other ones - better not mess with it for now, further
+		 * testing required!
+        if (700000U <= clkspeed)
+		{
+			REG32(i2c_periph + 0x90U) = 1;
+		}
+		else
+		{
+			REG32(i2c_periph + 0x90U) = 0;
+		}
+		*/
+    }
+}
 
 void twim_init(TWI_Master_t *twiPtr, const uint32_t interface, const uint32_t speed)
 {
@@ -71,8 +150,8 @@ void twim_init(TWI_Master_t *twiPtr, const uint32_t interface, const uint32_t sp
 	twiPtr->status = TWIM_STATUS_READY;
 	twiPtr->result = TWIM_RES_OK;
 	twiPtr->i2c_periph = interface;
-
-	i2c_clock_config(twiPtr->i2c_periph, speed, I2C_DTCY_2);
+	
+	custom_i2c_clock_config(twiPtr->i2c_periph, speed, I2C_DTCY_2);
 	i2c_mode_addr_config(twiPtr->i2c_periph, I2C_I2CMODE_ENABLE, I2C_ADDFORMAT_7BITS, 0x02);
 	i2c_enable(twiPtr->i2c_periph);
 	i2c_ack_config(twiPtr->i2c_periph, I2C_ACKPOS_NEXT);
@@ -112,10 +191,6 @@ TWIM_Error_t twim_writeRead(TWI_Master_t *twiPtr, const uint8_t slaveAddress, co
 
 	if (twiPtr->status == TWIM_STATUS_READY)
 	{
-		if (i2c_flag_get(twiPtr->i2c_periph, I2C_FLAG_I2CBSY))
-		{
-			return TWIM_ERR_BUSY;
-		}
 
 		twiPtr->status = TWIM_STATUS_BUSY;
 		twiPtr->result = TWIM_RES_UNKNOWN;
