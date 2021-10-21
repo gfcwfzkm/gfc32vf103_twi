@@ -332,7 +332,7 @@ uint8_t twim_InterfacePrepare(void *intTWI)
 	return twim_ready(twiPtr);
 }
 
-uint8_t twim_InterfaceSendBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, uint8_t buf_len)
+uint8_t twim_InterfaceSendBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, uint16_t buf_len)
 {
 	TWI_Master_t *twiPtr = (TWI_Master_t*)intTWI;
 	uint8_t _errors = 0;
@@ -346,13 +346,13 @@ uint8_t twim_InterfaceSendBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, ui
 	return _errors;
 }
 
-uint8_t twim_InterfaceTransceiveBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, uint8_t buf_len)
+uint8_t twim_InterfaceTransceiveBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, uint16_t buf_len)
 {
 	/* Function not supported yet */
 	return 1;
 }
 
-uint8_t twim_InterfaceGetBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, uint8_t buf_len)
+uint8_t twim_InterfaceGetBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, uint16_t buf_len)
 {
 	TWI_Master_t *twiPtr = (TWI_Master_t*)intTWI;
 	uint8_t _errors = 0;

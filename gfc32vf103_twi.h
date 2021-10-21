@@ -214,9 +214,9 @@ TWIM_Error_t twim_writeRead(TWI_Master_t *twiPtr, const uint8_t slaveAddress, co
 
 /* Special I/O functions for the universal driver interface that my IC drivers / libraries use: */
 uint8_t twim_InterfacePrepare(void *intTWI);
-uint8_t twim_InterfaceSendBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, uint8_t buf_len);
-uint8_t twim_InterfaceTransceiveBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, uint8_t buf_len);
-uint8_t twim_InterfaceGetBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, uint8_t buf_len);
+uint8_t twim_InterfaceSendBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, uint16_t buf_len);
+uint8_t twim_InterfaceTransceiveBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, uint16_t buf_len);
+uint8_t twim_InterfaceGetBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, uint16_t buf_len);
 uint8_t twim_InterfaceFinish(void *intTWI);
 
 /* GFC32VF103_I2C_H */
