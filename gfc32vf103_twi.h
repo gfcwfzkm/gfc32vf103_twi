@@ -28,8 +28,8 @@ typedef enum TWIM_Error{
 } TWIM_Error_t;
 
 typedef enum TWIM_Status{
-	TWIM_STATUS_BUSY	= (0<<0),	/**< I2C peripheral busy with a transaction */
-	TWIM_STATUS_READY	= (1<<0)	/**< I2C peripheral ready for new transactions */
+	TWIM_STATUS_READY	= (0<<0),	/**< I2C peripheral ready for new transactions */
+	TWIM_STATUS_BUSY	= (1<<0),	/**< I2C peripheral busy with a transaction */
 } TWIM_Status_t;
 
 #define TWI_WRITEBUFFER_SIZE	32

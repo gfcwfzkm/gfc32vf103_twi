@@ -163,7 +163,12 @@ TWIM_Result_t twim_result(TWI_Master_t *twiPtr)
 
 TWIM_Status_t twim_ready(TWI_Master_t *twiPtr)
 {
-	return twiPtr->status;
+	TWIM_Status_t status = TWIM_STATUS_READY;
+	if (i2c_flag_get(twiPtr->i2c_periph, I2C_FLAG_I2CBSY))
+	{
+		status = TWIM_STATUS_BUSY;
+	}
+	return (twiPtr->status | status);
 }
 
 TWIM_Error_t twim_read(TWI_Master_t *twiPtr, const uint8_t slaveAddress, const uint8_t bytesToRead)
@@ -188,7 +193,7 @@ TWIM_Error_t twim_writeRead(TWI_Master_t *twiPtr, const uint8_t slaveAddress, co
 		return TWIM_ERR_ARGERROR;
 	}
 
-	if (twiPtr->status == TWIM_STATUS_READY)
+	if (twim_ready(twiPtr) == TWIM_STATUS_READY)
 	{
 
 		twiPtr->status = TWIM_STATUS_BUSY;
@@ -329,7 +334,8 @@ static void _ReadHandler(TWI_Master_t *twiPtr)
 uint8_t twim_InterfacePrepare(void *intTWI)
 {
 	TWI_Master_t *twiPtr = (TWI_Master_t*)intTWI;
-	return twim_ready(twiPtr);
+	while(twim_ready(twiPtr) == TWIM_STATUS_BUSY);
+	return 0;
 }
 
 uint8_t twim_InterfaceSendBytes(void *intTWI, uint8_t addr, uint8_t *buf_ptr, uint16_t buf_len)
